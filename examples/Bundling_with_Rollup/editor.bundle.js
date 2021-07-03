@@ -4277,7 +4277,7 @@
         }
     }
 
-    let [nav, doc] = typeof navigator != "undefined"
+    let [nav, doc$1] = typeof navigator != "undefined"
         ? [navigator, document]
         : [{ userAgent: "", vendor: "", platform: "" }, { documentElement: { style: {} } }];
     const ie_edge = /*@__PURE__*//Edge\/(\d+)/.exec(nav.userAgent);
@@ -4286,12 +4286,12 @@
     const ie = !!(ie_upto10 || ie_11up || ie_edge);
     const gecko = !ie && /*@__PURE__*//gecko\/(\d+)/i.test(nav.userAgent);
     const chrome = !ie && /*@__PURE__*//Chrome\/(\d+)/.exec(nav.userAgent);
-    const webkit = "webkitFontSmoothing" in doc.documentElement.style;
+    const webkit = "webkitFontSmoothing" in doc$1.documentElement.style;
     const safari = !ie && /*@__PURE__*//Apple Computer/.test(nav.vendor);
     var browser = {
         mac: /*@__PURE__*//Mac/.test(nav.platform),
         ie,
-        ie_version: ie_upto10 ? doc.documentMode || 6 : ie_11up ? +ie_11up[1] : ie_edge ? +ie_edge[1] : 0,
+        ie_version: ie_upto10 ? doc$1.documentMode || 6 : ie_11up ? +ie_11up[1] : ie_edge ? +ie_edge[1] : 0,
         gecko,
         gecko_version: gecko ? +(/*@__PURE__*//Firefox\/(\d+)/.exec(nav.userAgent) || [0, 0])[1] : 0,
         chrome: !!chrome,
@@ -4301,7 +4301,7 @@
         webkit,
         safari,
         webkit_version: webkit ? +(/*@__PURE__*//\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1] : 0,
-        tabSize: doc.documentElement.style.tabSize != null ? "tab-size" : "-moz-tab-size"
+        tabSize: doc$1.documentElement.style.tabSize != null ? "tab-size" : "-moz-tab-size"
     };
 
     const none$2 = [];
@@ -14375,6 +14375,17 @@
         return true;
     };
     /**
+    Insert a tab character at the cursor or, if something is selected,
+    use [`indentMore`](https://codemirror.net/6/docs/ref/#commands.indentMore) to indent the entire
+    selection.
+    */
+    const insertTab = ({ state, dispatch }) => {
+        if (state.selection.ranges.some(r => !r.empty))
+            return indentMore({ state, dispatch });
+        dispatch(state.update(state.replaceSelection("\t"), { scrollIntoView: true, annotations: Transaction.userEvent.of("input") }));
+        return true;
+    };
+    /**
     Array of key bindings containing the Emacs-style bindings that are
     available on macOS by default.
 
@@ -14515,6 +14526,13 @@
         { key: "Shift-Mod-k", run: deleteLine },
         { key: "Shift-Mod-\\", run: cursorMatchingBracket }
     ].concat(standardKeymap);
+    /**
+    A binding that binds Tab to [`insertTab`](https://codemirror.net/6/docs/ref/#commands.insertTab) and
+    Shift-Tab to [`indentSelection`](https://codemirror.net/6/docs/ref/#commands.indentSelection).
+    Please see the [Tab example](../../examples/tab/) before using
+    this.
+    */
+    const defaultTabBinding = { key: "Tab", run: insertTab, shift: indentSelection };
 
     const defaults = {
         brackets: ["(", "[", "{", "'", '"'],
@@ -20829,9 +20847,16 @@
         }));
     }
 
+    const doc = `if (true) {
+    console.log("okay")
+  } else {
+    console.log("oh no")
+}`;
+
     new EditorView({
         state: EditorState.create({
-            extensions: [basicSetup, javascript()]
+            doc,
+            extensions: [basicSetup, javascript(), keymap.of([defaultTabBinding])]
         }),
         parent: document.body
     });
