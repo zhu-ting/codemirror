@@ -1,9 +1,19 @@
-import { EditorState, EditorView, basicSetup } from "@codemirror/basic-setup";
+import { EditorState, basicSetup } from "@codemirror/basic-setup";
 import { javascript } from "@codemirror/lang-javascript";
 
-let editor = new EditorView({
+import { EditorView, keymap } from "@codemirror/view";
+import { defaultTabBinding } from "@codemirror/commands";
+
+const doc = `if (true) {
+    console.log("okay")
+  } else {
+    console.log("oh no")
+}`
+
+let tabHandling = new EditorView({
     state: EditorState.create({
-        extensions: [basicSetup, javascript()]
+        doc,
+        extensions: [basicSetup, javascript(), keymap.of([defaultTabBinding])]
     }),
     parent: document.body
 })
